@@ -1,10 +1,15 @@
 add_rules("mode.debug", "mode.release")
 
-includes("plugs/neko_plug/neko_loader")
-
-target("project")
-    set_kind("binary")
+target("neko_loader")
+    set_kind("shared")
+    add_includedirs("../neko_log/")
+    add_files("src/*.c")
     add_files("src/*.cpp")
+
+target("neko_loader_test")
+    set_kind("binary")
+    add_deps("neko_loader")
+    add_files("src/main.c")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

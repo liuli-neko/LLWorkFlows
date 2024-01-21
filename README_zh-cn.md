@@ -103,9 +103,20 @@ classDiagram
     RuningElement ..|> State
     StopedElement ..|> State
     DestoryingElement ..|> State
+    ElementDelegate o-- Element
 
     note for Element "节点具有所有具体操作的实现，<br>但不会亲自进行状态切换"
     class Element {
+        <<Interface>>
+        +setup():ErrorCode
+        +run():ErrorCode
+        +teardown():ErrorCode
+        +sendData():ErrorCode
+        +event():ErrorCode
+        +state():State
+        +stateChanged():void
+    }
+    class ElementDelegate {
         <<Interface>>
         +State state
         +setup():ErrorCode
