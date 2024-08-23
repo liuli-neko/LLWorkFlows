@@ -1,0 +1,11 @@
+[
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++17", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/workflows/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
+  "file": "workflows/thread.cpp"
+},
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++17", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/workflows/linux/x86_64/debug/workflows/main.cpp.o", "workflows/main.cpp"],
+  "file": "workflows/main.cpp"
+}]
