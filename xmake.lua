@@ -3,13 +3,15 @@ set_project("llwflows")
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
-set_languages("c++17")
+set_languages("c++latest")
 
 add_requires("fmt")
+includes("./tests")
 
 target("workflows")
     set_kind("binary")
     add_packages("fmt")
+    add_defines("LLWFLOWS_STATIC")
     add_files("workflows/*.cpp")
 
 --
