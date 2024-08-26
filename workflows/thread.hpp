@@ -15,8 +15,9 @@ public:
     static auto currentThread() -> Thread&;
     static auto makeMetaObjectForCurrentThread(const char* name) -> void;
 
+    enum SchedPolicy { SchedRoundRobin = SCHED_RR, SchedFIFO = SCHED_FIFO, SchedOther = SCHED_OTHER };
 public:
-    Thread()                            = default;
+    Thread();
     virtual ~Thread();
     Thread(Thread&&)                    = default;
     auto operator=(Thread&&) -> Thread& = default;
@@ -25,6 +26,9 @@ public:
     auto name() const -> const char*;
     auto start(std::function<void()> func) -> void;
     auto start() -> void;
+    auto setPriority(const int policy, const int priority) -> void;
+    auto priority() const -> std::pair<int, int>;
+    auto maxPriority() const -> int;
     auto join() -> void;
     auto detach() -> void;
     auto id() const -> uint64_t;
@@ -41,6 +45,7 @@ private:
     Thread(const Thread&)                    = delete;
     auto operator=(const Thread&) -> Thread& = delete;
     auto runImpl() -> void;
+    auto setPriorityImpl(const int policy, const int priority) -> void;
 
 private:
     std::string                  mName{};
@@ -48,6 +53,8 @@ private:
     std::thread::id              mId{};
     std::atomic<bool>            mIsRunning{false};
     std::unique_ptr<std::thread> mThreadMetaData{};
+    int                          mPolicy{};
+    int                          mPriority{};
 };
 
 LLWFLOWS_NS_END  // namespace llworkflows

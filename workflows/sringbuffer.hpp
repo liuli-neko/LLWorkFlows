@@ -30,11 +30,11 @@ public:
     void clear();
 
 private:
-    std::unique_ptr<Element> mQueue;
-    std::atomic<std::size_t> mHead;
-    std::atomic<std::size_t> mTail;
-    std::atomic<std::size_t> mSize;
-    std::size_t              mCapacity;
+    std::unique_ptr<Element[]> mQueue;
+    std::atomic<std::size_t>   mHead;
+    std::atomic<std::size_t>   mTail;
+    std::atomic<std::size_t>   mSize;
+    std::size_t                mCapacity;
 };
 
 template <typename T>
@@ -82,8 +82,8 @@ template <typename T>
 bool SRingBuffer<T>::push(T&& item) {
     std::size_t tail = 0, index = 0, size = 0;
     Element*    e = nullptr;
+    size          = mSize.load(std::memory_order_relaxed);
     do {
-        size = mSize.load(std::memory_order_relaxed);
         if (size + 1 > mCapacity) {
             return false;
         }
@@ -109,11 +109,11 @@ template <typename T>
 bool SRingBuffer<T>::pop(T& item) {
     std::size_t head = 0, index = 0;
     Element*    e = nullptr;
+    head          = mHead.load(std::memory_order_relaxed);
     do {
         if (mSize.load(std::memory_order_relaxed) == 0) {
             return false;
         }
-        head  = mHead.load(std::memory_order_relaxed);
         index = (head + 1) % mCapacity;
         e     = mQueue.get() + head;
         if (!e->full.load(std::memory_order_relaxed)) {

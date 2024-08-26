@@ -5,13 +5,20 @@ add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 
 set_languages("c++latest")
 
-add_requires("fmt")
+add_requires("fmt", {optional = true})
 includes("./tests")
 
 target("workflows")
-    set_kind("binary")
-    add_packages("fmt")
-    add_defines("LLWFLOWS_STATIC")
+    set_kind("shared")
+    on_config(function (target) 
+        if not target:has_cxxincludes("format") then 
+            if has_package("fmt") then
+                target:add("packages", "fmt")
+            else 
+                target:add("defines", "LLWFLOWS_NDEBUG")
+            end
+        end
+    end)
     add_files("workflows/*.cpp")
 
 --

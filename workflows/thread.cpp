@@ -1,16 +1,21 @@
 #include "thread.hpp"
 
 #include <map>
-#include <stdexcept>
 
 #include "log.hpp"
 
 LLWFLOWS_NS_BEGIN
 
-static std::map<std::thread::id, Thread*> kThreads = {};
+static std::map<std::thread::id, Thread*> kThreads;
 
 // ------------ Thread ------------
-auto Thread::setName(const char* name) -> void { mName = name; }
+auto Thread::setName(const char* name) -> void {
+    mName = name;
+    if (isRunning()) {
+        pthread_t thread_handle = mThreadMetaData->native_handle();
+        pthread_setname_np(thread_handle, name);
+    }
+}
 
 auto Thread::name() const -> const char* { return mName.c_str(); }
 
@@ -32,6 +37,29 @@ auto Thread::start() -> void {
     mId           = mThreadMetaData->get_id();
     kThreads[mId] = this;
 }
+
+auto Thread::setPriority(const int policy, const int priority) -> void {
+    mPriority = priority;
+    mPolicy   = policy;
+    setPriorityImpl(policy, priority);
+}
+
+auto Thread::priority() const -> std::pair<int, int> {
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    int                policy;
+    struct sched_param param;
+    pthread_attr_getschedpolicy(&attr, &policy);
+    if (mThreadMetaData) {
+        pthread_t thread_handle = mThreadMetaData->native_handle();
+        pthread_getschedparam(thread_handle, &policy, &param);
+    } else {
+        pthread_getschedparam(pthread_self(), &policy, &param);
+    }
+    return {policy, param.sched_priority};
+}
+
+auto Thread::maxPriority() const -> int { return sched_get_priority_max(mPolicy); }
 
 auto Thread::join() -> void {
     LLWFLOWS_ASSERT(mThreadMetaData && mThreadMetaData->joinable(), "Thread not running");
@@ -82,8 +110,34 @@ auto Thread::isJoinable() const -> bool {
 
 auto Thread::runImpl() -> void {
     mIsRunning = true;
+    pthread_setname_np(pthread_self(), mName.c_str());
+    setPriorityImpl(mPolicy, mPriority);
     run();
     mIsRunning = false;
+}
+
+auto Thread::setPriorityImpl(const int policy, const int priority) -> void {
+    pthread_attr_t attr;
+    if (auto ret = pthread_attr_init(&attr); ret != 0) {
+        LLWFLOWS_LOG_ERROR("Failed to initialize thread({}) attribute, error: {}", name(), strerror(ret));
+    }
+    if (auto ret = pthread_attr_setschedpolicy(&attr, policy); ret != 0) {
+        LLWFLOWS_LOG_ERROR("Failed to set thread({}) policy, error: {}", name(), strerror(ret));
+    }
+    struct sched_param param;
+    param.sched_priority = priority;
+    if (auto ret = pthread_attr_setschedparam(&attr, &param); ret != 0) {
+        LLWFLOWS_LOG_ERROR("Failed to set thread param, error: {}", strerror(ret));
+    }
+    if (auto ret = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED); ret != 0) {
+        LLWFLOWS_LOG_ERROR("Failed to set thread inheritance, error: {}", strerror(ret));
+    }
+    if (mThreadMetaData) {
+        pthread_t thread_handle = mThreadMetaData->native_handle();
+        if (auto ret = pthread_setschedparam(thread_handle, policy, &param); ret != 0) {
+            LLWFLOWS_LOG_ERROR("Failed to set thread({}) priority, error: {}", name(), strerror(ret));
+        }
+    }
 }
 
 auto Thread::run() -> void {
@@ -110,6 +164,8 @@ auto Thread::makeMetaObjectForCurrentThread(const char* name) -> void {
     metaObject.mId           = std::this_thread::get_id();
     kThreads[metaObject.mId] = &metaObject;
 }
+
+Thread::Thread() { auto [mPolicy, mPriority] = priority(); }
 
 Thread::~Thread() {
     std::thread::id                              selfid;

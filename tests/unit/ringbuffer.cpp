@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <bitset>
+#include <thread>
 
 #include "../../workflows/log.hpp"
 #include "../../workflows/sringbuffer.hpp"
