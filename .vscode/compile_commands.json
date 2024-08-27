@@ -1,6 +1,26 @@
 [
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/tests/unit/llwflowsthreadworker.cpp.o", "tests/unit/llwflowsthreadworker.cpp"],
+  "file": "tests/unit/llwflowsthreadworker.cpp"
+},
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/threadworker.cpp.o", "workflows/threadworker.cpp"],
+  "file": "workflows/threadworker.cpp"
+},
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/threadpools.cpp.o", "workflows/threadpools.cpp"],
+  "file": "workflows/threadpools.cpp"
+},
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
+  "file": "workflows/thread.cpp"
+},
+{
+  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
   "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthread/linux/x86_64/debug/tests/unit/llwflowsthread.cpp.o", "tests/unit/llwflowsthread.cpp"],
   "file": "tests/unit/llwflowsthread.cpp"
 },
@@ -17,26 +37,6 @@
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
   "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthread/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
-  "file": "workflows/thread.cpp"
-},
-{
-  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/tests/unit/llwflowsthreadpool.cpp.o", "tests/unit/llwflowsthreadpool.cpp"],
-  "file": "tests/unit/llwflowsthreadpool.cpp"
-},
-{
-  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/threadworker.cpp.o", "workflows/threadworker.cpp"],
-  "file": "workflows/threadworker.cpp"
-},
-{
-  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/threadpools.cpp.o", "workflows/threadpools.cpp"],
-  "file": "workflows/threadpools.cpp"
-},
-{
-  "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
   "file": "workflows/thread.cpp"
 },
 {
@@ -61,22 +61,22 @@
 },
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/tests/unit/llwflowsthreadworker.cpp.o", "tests/unit/llwflowsthreadworker.cpp"],
-  "file": "tests/unit/llwflowsthreadworker.cpp"
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/tests/unit/llwflowsthreadpool.cpp.o", "tests/unit/llwflowsthreadpool.cpp"],
+  "file": "tests/unit/llwflowsthreadpool.cpp"
 },
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/threadworker.cpp.o", "workflows/threadworker.cpp"],
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/threadworker.cpp.o", "workflows/threadworker.cpp"],
   "file": "workflows/threadworker.cpp"
 },
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/threadpools.cpp.o", "workflows/threadpools.cpp"],
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/threadpools.cpp.o", "workflows/threadpools.cpp"],
   "file": "workflows/threadpools.cpp"
 },
 {
   "directory": "/home/llhsdmd/workplace/LLWorkFlows",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadworker/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-g", "-O0", "-std=c++23", "-DLLWFLOWS_STATIC", "-DLLWFLOWS_LOG_CONTEXT", "-DGTEST_HAS_PTHREAD=1", "-I", "/home/llhsdmd/.xmake/packages/f/fmt/10.2.1/0327b556927c46fcabb4dbd6ed4fb632/include", "-o", "build/.objs/test_llwflowsthreadpool/linux/x86_64/debug/workflows/thread.cpp.o", "workflows/thread.cpp"],
   "file": "workflows/thread.cpp"
 },
 {

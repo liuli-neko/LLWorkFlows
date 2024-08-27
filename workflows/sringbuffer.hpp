@@ -23,6 +23,7 @@ public:
     bool        pop(T& item);
     bool        empty() const;
     std::size_t size() const;
+    std::size_t capacity() const;
     /**
      * @brief clear all element
      * this function is not thread safety
@@ -121,7 +122,7 @@ bool SRingBuffer<T>::pop(T& item) {
         }
     } while (!mHead.compare_exchange_weak(head, index, std::memory_order_release, std::memory_order_relaxed));
 
-    item = e->value;
+    item = std::move(e->value);
     e->full.store(false, std::memory_order_release);
     mSize.fetch_sub(1, std::memory_order_release);
 
@@ -136,6 +137,11 @@ inline bool SRingBuffer<T>::empty() const {
 template <typename T>
 inline std::size_t SRingBuffer<T>::size() const {
     return mSize.load(std::memory_order_release);
+}
+
+template <typename T>
+inline std::size_t SRingBuffer<T>::capacity() const {
+    return mCapacity;
 }
 
 template <typename T>

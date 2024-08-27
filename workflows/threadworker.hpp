@@ -12,7 +12,7 @@
 
 LLWFLOWS_NS_BEGIN
 
-enum class TaskState { Queuing = 0, Running, Done, Cancelled, Failed };
+enum class TaskState { Queuing = 0, Running, Done, Cancelled, Custom = 0x8000 };
 
 class TaskPromise {
 public:
@@ -21,7 +21,7 @@ public:
     auto workerId() const -> int;
     auto workerIds() const -> const std::vector<int>&;
     auto cancel() -> int;
-    auto runFailed() -> int;
+    auto changeState(const TaskState old, const TaskState newstate) -> int;
     auto resetState() -> int;
     auto done() -> int;
 #if LLWFLOWS_CPP_PLUS >= 20
@@ -40,36 +40,37 @@ protected:
      * @return std::atomic<TaskState>&
      */
     auto mutableState() -> std::atomic<TaskState>&;
-    auto mutableWorkerId() -> int&;
+    auto mutableWorkerId() -> std::atomic<int>&;
     auto mutableWorkerIds() -> std::vector<int>&;
     friend class ThreadWorker;
 
 private:
     std::atomic<TaskState> mState{TaskState::Queuing};
-    int                    mWorkerId{-1};
+    std::atomic<int>       mWorkerId{-1};
     std::vector<int>       mWorkerIds;
 };
 
 struct Task {
-    std::function<void(TaskPromise&)> func;
-    std::shared_ptr<TaskPromise>      taskPromise;
+    std::function<void()>        func;
+    std::shared_ptr<TaskPromise> taskPromise;
 };
 
 class LLWFLOWS_API ThreadWorker : Thread {
 public:
-    ThreadWorker(const int workerId = -1, const int maxQueueSize = 1024);
+    ThreadWorker(const int workerId = -1, const int maxQueueSize = 1024, const int maxIdleLoopCount = 0xffffff);
     ~ThreadWorker() override = default;
 
     auto init(const int workerId) -> int;
     auto start() -> int;
     auto workerId() const -> int;
-    auto post(std::function<void(TaskPromise&)> func) -> std::shared_ptr<TaskPromise>;
-    auto post(std::function<void(TaskPromise&)> func, std::shared_ptr<TaskPromise> taskPromise) -> int;
     auto post(std::function<void()> func) -> std::shared_ptr<TaskPromise>;
     auto post(std::function<void()> func, std::shared_ptr<TaskPromise> taskPromise) -> int;
     auto waitForExit() -> void;
     auto exit(bool AfterTaskInQueue = false) -> void;
     auto taskQueue() -> SRingBuffer<Task>&;
+    auto idleLoopCount() -> int;
+    auto maxIdleLoopCount() -> int;
+    auto registerCallbackInIdleLoop(std::function<void(const int workId, const int count)> func) -> void;
 
     using Thread::isRunning;
     using Thread::maxPriority;
@@ -88,13 +89,15 @@ private:
     auto operator=(ThreadWorker&&) -> ThreadWorker&      = delete;
 
 private:
-    int                     mWorkerId{-1};
-    bool                    mIsPaused{false};
-    std::atomic<bool>       mExit{false};
-    std::atomic<bool>       mExitAfterAllTasks{false};
-    SRingBuffer<Task>       mTasks;
-    std::mutex              mMutex;
-    std::condition_variable mConditionVar;
+    int                                       mWorkerId{-1};
+    std::atomic<bool>                         mExit{false};
+    std::atomic<bool>                         mExitAfterAllTasks{false};
+    SRingBuffer<Task>                         mTasks;
+    std::mutex                                mMutex;
+    std::condition_variable                   mConditionVar;
+    std::atomic<int>                          mIdleLoopCount{0};
+    const int                                 mMaxIdleLoopCount{0xffffff};
+    std::function<void(const int, const int)> mCallbackInIdleLoop;
 };
 
 LLWFLOWS_NS_END

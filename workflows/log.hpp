@@ -1,5 +1,7 @@
 #pragma once
 
+#include <time.h>
+
 #include "workflowsglobal.hpp"
 
 #if !defined(NDEBUG) && !defined(LLWFLOWS_NDEBUG)
@@ -43,9 +45,9 @@
 #endif
 
 #ifdef LLWFLOWS_LOG_CONTEXT
-#define LLWFLOWS_LOG_OUTPUT_FUNC(level, fmt, ...)                                                            \
-    fprintf(LLWFLOWS_LOG_OUTPUT, "%s%s\n",                                                                   \
-            LLWFLOWS_FORMAT(level " - [{}][{}:{}][{}]", __TIME__, __FILE__, __LINE__, __FUNCTION__).c_str(), \
+#define LLWFLOWS_LOG_OUTPUT_FUNC(level, fmt, ...)                                                           \
+    fprintf(LLWFLOWS_LOG_OUTPUT, "%s%s\n",                                                                  \
+            LLWFLOWS_FORMAT(level " - [{}][{}:{}][{}]", clock(), __FILE__, __LINE__, __FUNCTION__).c_str(), \
             LLWFLOWS_FORMAT(fmt, ##__VA_ARGS__).c_str())
 #else
 #define LLWFLOWS_LOG_OUTPUT_FUNC(level, ...) \
