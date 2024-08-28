@@ -16,7 +16,7 @@ enum class TaskState { Queuing = 0, Running, Done, Cancelled, Custom = 0x8000 };
 
 class TaskPromise {
 public:
-    TaskPromise()          = default;
+    TaskPromise() noexcept = default;
     virtual ~TaskPromise() = default;
     auto state() const -> TaskState;
     auto workerId() const -> int;
@@ -64,6 +64,13 @@ private:
 };
 
 struct Task {
+    inline Task() noexcept            = default;
+    inline Task(const Task&) noexcept = default;
+    inline Task(Task&&) noexcept      = default;
+    inline Task(std::function<void()> func, std::shared_ptr<TaskPromise> taskPromise) noexcept
+        : func(std::move(func)), taskPromise(std::move(taskPromise)) {}
+    inline Task&                 operator=(const Task&) noexcept = default;
+    inline Task&                 operator=(Task&&) noexcept      = default;
     std::function<void()>        func;
     std::shared_ptr<TaskPromise> taskPromise;
 };

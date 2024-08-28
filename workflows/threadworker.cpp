@@ -103,7 +103,6 @@ auto ThreadWorker::init(const int workerId) -> int {
     }
     mWorkerId = workerId;
     setName((std::string("Worker-") + std::to_string(workerId)).c_str());
-    mTasks.clear();
     return 0;
 }
 

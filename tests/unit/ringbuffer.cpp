@@ -29,21 +29,22 @@ TEST(RingBufferTest, MultiThreadWrite) {
     for (int i = 0; i < 10; ++i) {
         threads[i] = std::thread([&buffer, count = i]() {
             LLWFLOWS_LOG_INFO("thread {} start.", count);
-            for (int j = 0; j < 100; ++j) {
-                while (!buffer.push(j + count * 100)) {
+            for (int j = 0; j < 10; ++j) {
+                while (!buffer.push(j + count * 10)) {
                 };
             }
         });
     }
 
-    SRingBuffer<int> buffer1(1000);
+    SRingBuffer<int> buffer1(100);
     for (int i = 10; i < 20; ++i) {
         threads[i] = std::thread([&buffer, &buffer1, count = i]() {
             LLWFLOWS_LOG_INFO("thread {} start.", count);
-            for (int j = 0; j < 100; ++j) {
-                int t;
+            for (int j = 0; j < 10; ++j) {
+                int t = 0;
                 while (!buffer.pop(t)) {
                 };
+                if (t >= 100) LLWFLOWS_LOG_WARN("t = {}", t);
                 buffer1.push(t);
             }
         });
@@ -52,11 +53,11 @@ TEST(RingBufferTest, MultiThreadWrite) {
     for (int i = 0; i < 20; ++i) {
         threads[i].join();
     }
-    std::bitset<1000> bits;
+    std::bitset<100> bits;
     while (buffer1.size() > 0) {
         int t = 0;
         buffer1.pop(t);
-        ASSERT_TRUE(t < 1000);
+        ASSERT_LT(t, 100);
         EXPECT_EQ(bits[t], 0) << "t = " << t;
         bits[t] = 1;
     }

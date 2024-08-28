@@ -37,10 +37,10 @@ void ThreadPool::wait(std::shared_ptr<TaskPromise> task) {
     while (task->state() == (TaskState)TaskStateCustom::TaskDependsUnfinish || task->state() == TaskState::Queuing ||
            task->state() == TaskState::Running) {
 #if LLWFLOWS_CPP_PLUS < 20
-        std::guard<std::mutex> lock(mMutex);
+        std::unique_lock<std::mutex> lock(mMutex);
         while (task->state() == TaskState::Queuing || task->state() == TaskState::Running) {
             mCondition.wait(lock, [task]() {
-                return (task->state() == TaskState::Queuing || task->state() == TaskState::Running);
+                return !(task->state() == TaskState::Queuing || task->state() == TaskState::Running);
             });
         }
 #else
@@ -147,7 +147,7 @@ auto ThreadPool::packTask(std::function<void()> task, const TaskDescription& des
                 return;
             }
 #if LLWFLOWS_CPP_PLUS < 20
-            if (p->promise.state() != TaskState::Running || p->promise.state() != TaskState::Queuing) {
+            if (p->promise->state() != TaskState::Running && p->promise->state() != TaskState::Queuing) {
                 mCondition.notify_all();
             }
 #endif
