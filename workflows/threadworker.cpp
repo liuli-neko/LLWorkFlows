@@ -1,6 +1,6 @@
 #include "threadworker.hpp"
 
-#include "log.hpp"
+#include "detail/log.hpp"
 
 LLWFLOWS_NS_BEGIN
 auto TaskPromise::state() const -> TaskState { return mState.load(std::memory_order_release); }
@@ -70,6 +70,15 @@ auto TaskPromise::done() -> int {
 #endif
     return 0;
 }
+
+auto TaskPromise::userData() -> void* { return mUserData; }
+
+auto TaskPromise::userData(void* data) -> void { mUserData = data; }
+
+auto TaskPromise::taskId() -> uint64_t { return mTaskId; }
+
+auto TaskPromise::taskId(uint64_t id) -> void { mTaskId = id; }
+
 #if LLWFLOWS_CPP_PLUS >= 20
 auto TaskPromise::wait() -> TaskState {
     while (mState.load(std::memory_order_release) == TaskState::Queuing ||
@@ -133,7 +142,8 @@ auto ThreadWorker::post(std::function<void()> func, std::shared_ptr<TaskPromise>
         return 0;
     }
     taskPromise->mutableWorkerIds().pop_back();
-    LLWFLOWS_LOG_WARN("Worker id({}) post task failed.", mWorkerId);
+    LLWFLOWS_LOG_WARN("Worker id({}) post task failed. queue size: {}, capacity: {}", mWorkerId, mTasks.size(),
+                      mTasks.capacity());
     return -1;
 }
 
@@ -164,6 +174,13 @@ auto ThreadWorker::registerCallbackInIdleLoop(std::function<void(const int workI
     mCallbackInIdleLoop = func;
 }
 
+auto ThreadWorker::isIdle() -> bool {
+    if (mIdleLoopCount.load(std::memory_order_release) >= mMaxIdleLoopCount) {
+        return true;
+    }
+    return false;
+}
+
 void ThreadWorker::run() {
     while (!mExit) {
         Task task;
@@ -184,13 +201,13 @@ void ThreadWorker::run() {
                 }
             }
         } else if (mTasks.size() == 0) {
-            if (mExitAfterAllTasks) {
-                mExit.store(true, std::memory_order_release);
-                break;
-            }
             mIdleLoopCount.fetch_add(1, std::memory_order_release);
             if (mCallbackInIdleLoop) {
                 mCallbackInIdleLoop(mWorkerId, mIdleLoopCount.load(std::memory_order_release));
+            }
+            if (mExitAfterAllTasks && mTasks.size() == 0) {
+                mExit.store(true, std::memory_order_release);
+                break;
             }
             if (mIdleLoopCount.load(std::memory_order_release) > mMaxIdleLoopCount) {
                 std::unique_lock<std::mutex> lock(mMutex);

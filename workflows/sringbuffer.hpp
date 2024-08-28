@@ -3,7 +3,7 @@
 #include <atomic>
 #include <memory>
 
-#include "workflowsglobal.hpp"
+#include "detail/workflowsglobal.hpp"
 
 LLWFLOWS_NS_BEGIN
 

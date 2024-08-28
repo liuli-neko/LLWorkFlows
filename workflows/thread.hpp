@@ -6,7 +6,7 @@
 #include <string>
 #include <thread>
 
-#include "workflowsglobal.hpp"
+#include "detail/workflowsglobal.hpp"
 
 LLWFLOWS_NS_BEGIN
 

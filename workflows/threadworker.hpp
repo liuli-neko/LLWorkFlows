@@ -16,7 +16,8 @@ enum class TaskState { Queuing = 0, Running, Done, Cancelled, Custom = 0x8000 };
 
 class TaskPromise {
 public:
-    TaskPromise() = default;
+    TaskPromise()          = default;
+    virtual ~TaskPromise() = default;
     auto state() const -> TaskState;
     auto workerId() const -> int;
     auto workerIds() const -> const std::vector<int>&;
@@ -24,6 +25,10 @@ public:
     auto changeState(const TaskState old, const TaskState newstate) -> int;
     auto resetState() -> int;
     auto done() -> int;
+    auto userData() -> void*;
+    auto userData(void* data) -> void;
+    auto taskId() -> uint64_t;
+    auto taskId(uint64_t id) -> void;
 #if LLWFLOWS_CPP_PLUS >= 20
     auto wait() -> TaskState;
     auto notifyOne() -> void;
@@ -45,9 +50,17 @@ protected:
     friend class ThreadWorker;
 
 private:
+    TaskPromise(TaskPromise&&)                 = delete;
+    TaskPromise(const TaskPromise&)            = delete;
+    TaskPromise& operator=(TaskPromise&&)      = delete;
+    TaskPromise& operator=(const TaskPromise&) = delete;
+
+private:
     std::atomic<TaskState> mState{TaskState::Queuing};
     std::atomic<int>       mWorkerId{-1};
     std::vector<int>       mWorkerIds;
+    uint64_t               mTaskId   = 0;
+    void*                  mUserData = nullptr;
 };
 
 struct Task {
@@ -71,6 +84,7 @@ public:
     auto idleLoopCount() -> int;
     auto maxIdleLoopCount() -> int;
     auto registerCallbackInIdleLoop(std::function<void(const int workId, const int count)> func) -> void;
+    auto isIdle() -> bool;
 
     using Thread::isRunning;
     using Thread::maxPriority;

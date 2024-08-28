@@ -19,7 +19,6 @@ for _, file in ipairs(os.files("./unit/**.cpp")) do
         add_files("../workflows/**.cpp")
         add_tests(name)
         add_packages("gtest")
-        add_defines("LLWFLOWS_STATIC", "LLWFLOWS_LOG_CONTEXT")
-
+        add_defines("LLWFLOWS_STATIC", "LLWFLOWS_LOG_CONTEXT", "LLWFLOWS_LOG_LEVEL_DEBUG")
     target_end()
 end

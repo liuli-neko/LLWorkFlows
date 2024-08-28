@@ -3,7 +3,7 @@
 #include <bitset>
 #include <thread>
 
-#include "../../workflows/log.hpp"
+#include "../../workflows/detail/log.hpp"
 #include "../../workflows/sringbuffer.hpp"
 
 LLWFLOWS_NS_USING

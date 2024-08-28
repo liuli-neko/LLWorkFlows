@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "log.hpp"
+#include "detail/log.hpp"
 
 LLWFLOWS_NS_BEGIN
 

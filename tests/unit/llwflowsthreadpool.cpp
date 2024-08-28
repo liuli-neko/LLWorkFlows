@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 
-#include "../../workflows/log.hpp"
+#include "../../workflows/detail/log.hpp"
 #include "../../workflows/threadpools.hpp"
 
 LLWFLOWS_NS_USING
@@ -21,6 +21,7 @@ TEST(ThreadPoolTest, Basic) {
             std::this_thread::sleep_for(std::chrono::milliseconds(random() % 10));
             doneIds.push(i);
         });
+        ASSERT_TRUE(taskInfo[i] != nullptr);
     }
 
     threadPool.stopAndwaitAll();
@@ -52,6 +53,7 @@ TEST(ThreadPoolTest, Cancel) {
                     doneIds.push(idx);
                 },
                 desc);
+            ASSERT_TRUE(taskInfo[i * num_test_tasks + j] != nullptr);
         }
     }
     for (int i = 0; i < num_test_threads; ++i) {
@@ -113,6 +115,7 @@ TEST(ThreadPoolTest, waitTask) {
             std::this_thread::sleep_for(std::chrono::milliseconds(random() % 100));
             doneIds.push(i);
         });
+        ASSERT_TRUE(taskInfo[i] != nullptr);
     }
 
     for (int i = 0; i < num_test_threads * num_test_tasks; ++i) {
@@ -150,6 +153,7 @@ TEST(ThreadPoolTest, depends) {
                 ++count;
             },
             desc);
+        ASSERT_TRUE(taskInfo[i] != nullptr);
     }
 
     threadPool.wait(taskInfo[num_test_threads * num_test_tasks - 1]);
@@ -170,29 +174,39 @@ TEST(ThreadPoolTest, priority) {
     SRingBuffer<std::pair<int, long long>> doneIds(num_test_threads * num_test_tasks + 1);
     ThreadPool                             threadPool(num_test_threads);
     std::shared_ptr<TaskPromise>           taskInfo[num_test_threads * num_test_tasks];
-    threadPool.start();
+    threadPool.start(true);
     for (int i = 0; i < num_test_tasks / 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             TaskDescription desc;
             desc.priority       = (TaskPriority)(j);
             desc.name           = "task-" + std::to_string(i * 3 + j);
-            clock_t tStrat      = clock();
+            auto tStrat         = std::chrono::system_clock::now();
             taskInfo[i * 3 + j] = threadPool.addTask(
                 [&doneIds, j, tStrat]() {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    doneIds.push(std::make_pair(j, clock() - tStrat));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                    doneIds.push(std::make_pair(j, (std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                        std::chrono::system_clock::now() - tStrat))
+                                                       .count()));
                 },
                 desc);
+            ASSERT_TRUE(taskInfo[i * 3 + j] != nullptr);
         }
     }
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     threadPool.stopAndwaitAll();
     std::vector<uint64_t>     counts(3, 0);
     std::pair<int, long long> id;
+    EXPECT_EQ(doneIds.size(), num_test_tasks);
     while (doneIds.pop(id)) {
         counts[id.first] += id.second;
     }
-
+    LLWFLOWS_LOG_INFO("{} tasks with TaskPriority Low average take {} ms", num_test_tasks / 3,
+                      counts[2] / (num_test_tasks / 3));
+    LLWFLOWS_LOG_INFO("{} tasks with TaskPriority Normal average take {} ms", num_test_tasks / 3,
+                      counts[1] / (num_test_tasks / 3));
+    LLWFLOWS_LOG_INFO("{} tasks with TaskPriority High average take {} ms", num_test_tasks / 3,
+                      counts[0] / (num_test_tasks / 3));
     EXPECT_GE(counts[1], counts[0]);
     EXPECT_GE(counts[2], counts[1]);
 };

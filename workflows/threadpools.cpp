@@ -1,6 +1,6 @@
 #include "threadpools.hpp"
 
-#include "log.hpp"
+#include "detail/log.hpp"
 
 LLWFLOWS_NS_BEGIN
 
@@ -24,7 +24,11 @@ std::shared_ptr<TaskPromise> ThreadPool::addTask(std::function<void()> task, con
         LLWFLOWS_LOG_WARN("No worker available");
         return std::shared_ptr<TaskPromise>();
     }
-    return distributeTask(task, desc);
+    auto taskPromise = distributeTask(task, desc);
+    if (taskPromise != nullptr) {
+        taskPromise->taskId(++mTaskCount);
+    }
+    return std::move(taskPromise);
 }
 
 int  ThreadPool::cancel(std::shared_ptr<TaskPromise> task) { return task->cancel(); }
@@ -45,11 +49,13 @@ void ThreadPool::wait(std::shared_ptr<TaskPromise> task) {
     }
 }
 
-void ThreadPool::start() {
+void ThreadPool::start(const bool enableWorkStealing) {
     for (auto& worker : mWorkers) {
+        if (enableWorkStealing) {
+            worker.registerCallbackInIdleLoop(
+                std::bind(&ThreadPool::onWorkerIdle, this, std::placeholders::_1, std::placeholders::_2));
+        }
         worker.start();
-        worker.registerCallbackInIdleLoop(
-            std::bind(&ThreadPool::onWorkerIdle, this, std::placeholders::_1, std::placeholders::_2));
     }
 }
 
@@ -78,26 +84,26 @@ auto ThreadPool::distributeTask(std::function<void()> task, const TaskDescriptio
             LLWFLOWS_LOG_ERROR("Invalid worker id: {}", desc.specifyWorkerId);
             return nullptr;
         }
-        auto [taskWithRetry, descptr] = makeTaskRetry(std::move(task), desc);
+        auto [taskWithRetry, descptr] = packTask(std::move(task), desc);
         return addTaskImp(std::move(taskWithRetry), *descptr, desc.specifyWorkerId);
     }
-    auto [taskWithRetry, descptr] = makeTaskRetry(std::move(task), desc);
+    auto [taskWithRetry, descptr] = packTask(std::move(task), desc);
     int workerId                  = -1;
     switch (desc.priority) {
         case TaskPriority::Low:
-            workerId = workerIdSortByQueueSize(mWorkers.size() - 2);
+            workerId = pickWorkerIdByWorkload(-1);
             break;
         case TaskPriority::Normal:
-            workerId = workerIdSortByQueueSize(0);
+            workerId = pickWorkerIdByRandom();
             break;
         case TaskPriority::High:
-            workerId = workerIdSortByIdleLoop(0);
+            workerId = pickWorkerIdByIdleness(0);
             if (workerId == -1) {
-                workerId = workerIdSortByQueueSize(0);
+                workerId = pickWorkerIdByWorkload(0);
             }
     }
     if (workerId == -1) {
-        workerId = loopThroughWorkerId();
+        workerId = pickWorkerIdByRandom();
     }
     if (descptr->retryCount > 10) {
         for (auto& dep : descptr->dependencies) {
@@ -107,24 +113,32 @@ auto ThreadPool::distributeTask(std::function<void()> task, const TaskDescriptio
             }
         }
     }
-    // LLWFLOWS_LOG_INFO("add task[{}] to worker {} with priority {}, workerqueuesize {}, idle count {}", descptr->name, workerId,
-    //                   (int)desc.priority, mWorkers[workerId].taskQueue().size(), mWorkers[workerId].idleLoopCount());
+    LLWFLOWS_DEBUG("add task[{}] to worker {} with priority {}, workerqueuesize {}, idle count {}", descptr->name,
+                   workerId, desc.priority, mWorkers[workerId].taskQueue().size(), mWorkers[workerId].idleLoopCount());
     return addTaskImp(std::move(taskWithRetry), *descptr, workerId);
 }
 
 auto ThreadPool::onWorkerIdle(const int workerId, const int IdleCount) -> void {
-    if (IdleCount >= mWorkers[workerId].maxIdleLoopCount() / 2) {
-        auto idx = workerIdSortByQueueSize(mWorkers.size() - 1);
-        if (idx != -1) {
-            Task task;
-            if (mWorkers[idx].taskQueue().size() > 1 && mWorkers[idx].taskQueue().pop(task)) {
-                mWorkers[workerId].taskQueue().push(std::move(task));
+    if (IdleCount >= mWorkers[workerId].maxIdleLoopCount() / 1000) {
+        auto idx = pickWorkerIdByQueueSize(-1);
+        if (idx == -1) {
+            return;
+        }
+        Task task;
+        if (mWorkers[idx].taskQueue().size() <= 1 || !mWorkers[idx].taskQueue().pop(task)) {
+            return;
+        }
+
+        while (!mWorkers[workerId].taskQueue().push(task)) {
+            if (mWorkers[idx].taskQueue().push(task)) {
+                return;
             }
         }
+        LLWFLOWS_LOG_INFO("steal task[{}] from worker {} to worker {}", task.taskPromise->taskId(), idx, workerId);
     }
 }
 
-auto ThreadPool::makeTaskRetry(std::function<void()> task, const TaskDescription& desc)
+auto ThreadPool::packTask(std::function<void()> task, const TaskDescription& desc)
     -> std::pair<std::function<void()>, TaskDescription*> {
     std::shared_ptr<TaskDescription> descptr =
         std::shared_ptr<TaskDescription>(new TaskDescription{std::move(desc)}, [this, task](TaskDescription* p) {
@@ -142,8 +156,8 @@ auto ThreadPool::makeTaskRetry(std::function<void()> task, const TaskDescription
                 distributeTask(task, *p);
             }
             if (p->promise->state() == TaskState::Done) {
-                // LLWFLOWS_LOG_INFO("task[{}] fished in worker {}, retry {}, priority {}.", p->name,
-                //                   p->promise->workerId(), p->retryCount, (int)p->priority);
+                LLWFLOWS_DEBUG("task[{}/{}] fished in worker {}, retry {}, priority {}.", p->name, p->promise->taskId(),
+                               p->promise->workerId(), p->retryCount, p->priority);
             }
             delete p;
         });
@@ -182,15 +196,15 @@ std::shared_ptr<TaskPromise> ThreadPool::addTaskImp(std::function<void()> task, 
     return std::shared_ptr<TaskPromise>();
 }
 
-auto ThreadPool::loopThroughWorkerId() -> int { return mCurrentWorkerId++ % mWorkers.size(); }
+auto ThreadPool::pickWorkerIdByRoundRobin() -> int { return mCurrentWorkerId++ % mWorkers.size(); }
 
-auto ThreadPool::workerIdSortByQueueSize(const int idx) -> int {
-    if (idx < 0 || idx >= mWorkers.size()) {
+auto ThreadPool::pickWorkerIdByWorkload(const int idx) -> int {
+    if (std::abs(idx) >= mWorkers.size()) {
         return -1;
     }
     std::vector<std::pair<int, std::pair<int, int>>> workerQueueSize;
     for (int i = 0; i < mWorkers.size(); i++) {
-        if (mWorkers[i].taskQueue().size() < mWorkers[idx].taskQueue().capacity()) {
+        if (mWorkers[i].taskQueue().size() < mWorkers[i].taskQueue().capacity()) {
             workerQueueSize.push_back(
                 std::make_pair(i, std::make_pair(mWorkers[i].taskQueue().size(), mWorkers[i].idleLoopCount())));
         }
@@ -201,11 +215,18 @@ auto ThreadPool::workerIdSortByQueueSize(const int idx) -> int {
         }
         return a.second.first < b.second.first;
     });
-    return workerQueueSize[idx].first;
+    if (std::abs(idx) > workerQueueSize.size()) {
+        return -1;
+    }
+    if (idx >= 0) {
+        return workerQueueSize[idx].first;
+    } else {
+        return workerQueueSize[workerQueueSize.size() + idx].first;
+    }
 }
 
-auto ThreadPool::workerIdSortByIdleLoop(const int idx) -> int {
-    if (idx < 0 || idx >= mWorkers.size()) {
+auto ThreadPool::pickWorkerIdByIdleness(const int idx) -> int {
+    if (std::abs(idx) >= mWorkers.size()) {
         return -1;
     }
     std::vector<std::pair<int, int>> workerIdleLoop;
@@ -216,10 +237,44 @@ auto ThreadPool::workerIdSortByIdleLoop(const int idx) -> int {
     }
     std::sort(workerIdleLoop.begin(), workerIdleLoop.end(),
               [](const auto& a, const auto& b) { return a.second < b.second; });
-    if (workerIdleLoop.size() <= idx) {
+    if (workerIdleLoop.size() <= std::abs(idx)) {
         return -1;  // no specific idle loop
     }
-    return workerIdleLoop[idx].first;
+    if (idx >= 0) {
+        return workerIdleLoop[idx].first;
+    } else {
+        return workerIdleLoop[workerIdleLoop.size() + idx].first;
+    }
+}
+
+auto ThreadPool::pickWorkerIdByQueueSize(const int idx) -> int {
+    if (std::abs(idx) >= mWorkers.size()) {
+        return -1;
+    }
+    std::vector<std::pair<int, int>> workerQueueSize;
+    for (int i = 0; i < mWorkers.size(); i++) {
+        workerQueueSize.push_back(std::make_pair(i, mWorkers[i].taskQueue().size()));
+    }
+    std::sort(workerQueueSize.begin(), workerQueueSize.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; });
+    if (workerQueueSize.size() <= std::abs(idx)) {
+        return -1;  // no specific queue size
+    }
+    if (idx >= 0) {
+        return workerQueueSize[idx].first;
+    } else {
+        return workerQueueSize[workerQueueSize.size() + idx].first;
+    }
+}
+
+auto ThreadPool::pickWorkerIdByRandom() -> int {
+    std::vector<int> workerIdavalible;
+    for (int i = 0; i < mWorkers.size(); i++) {
+        if (mWorkers[i].taskQueue().size() < mWorkers[i].taskQueue().capacity()) {
+            workerIdavalible.push_back(i);
+        }
+    }
+    return workerIdavalible[rand() % workerIdavalible.size()];
 }
 
 auto ThreadPool::workers() -> std::vector<ThreadWorker>& { return mWorkers; }
