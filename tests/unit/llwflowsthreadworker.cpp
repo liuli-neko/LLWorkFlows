@@ -3,6 +3,7 @@
 #include <bitset>
 #include <chrono>
 #include <thread>
+#include <random>
 
 #include "../../workflows/detail/log.hpp"
 #include "../../workflows/threadworker.hpp"
@@ -19,7 +20,7 @@ TEST(ThreadWorkerTest, Basic) {
         threads[i].start();
         for (int j = 0; j < num_test_tasks; ++j) {
             taskInfo[i * num_test_tasks + j] = threads[i].post([i, j, &doneIds]() {
-                std::this_thread::sleep_for(std::chrono::milliseconds(random() % 10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 10));
                 doneIds.push(i * num_test_tasks + j);
             });
         }

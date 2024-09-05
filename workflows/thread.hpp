@@ -14,8 +14,9 @@ class LLWFLOWS_API Thread {
 public:
     static auto currentThread() -> Thread&;
     static auto makeMetaObjectForCurrentThread(const char* name) -> void;
-
+#ifdef __linux__
     enum SchedPolicy { SchedRoundRobin = SCHED_RR, SchedFIFO = SCHED_FIFO, SchedOther = SCHED_OTHER };
+#endif
 public:
     Thread();
     virtual ~Thread();

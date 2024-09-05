@@ -3,6 +3,7 @@
 #include <bitset>
 #include <chrono>
 #include <thread>
+#include <random>
 
 #include "../../workflows/detail/log.hpp"
 #include "../../workflows/threadpools.hpp"
@@ -18,7 +19,7 @@ TEST(ThreadPoolTest, Basic) {
 
     for (int i = 0; i < num_test_threads * num_test_tasks; ++i) {
         taskInfo[i] = threadPool.addTask([i, &doneIds]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(random() % 10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 10));
             doneIds.push(i);
         });
         ASSERT_TRUE(taskInfo[i] != nullptr);
@@ -112,7 +113,7 @@ TEST(ThreadPoolTest, waitTask) {
 
     for (int i = 0; i < num_test_threads * num_test_tasks; ++i) {
         taskInfo[i] = threadPool.addTask([i, &doneIds]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(random() % 100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 100));
             doneIds.push(i);
         });
         ASSERT_TRUE(taskInfo[i] != nullptr);

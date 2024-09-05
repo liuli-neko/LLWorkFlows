@@ -28,6 +28,21 @@
 
 #if defined(LLWFLOWS_STD_FORMAT)
 #define LLWFLOWS_FORMAT std::format
+template <typename T>
+requires std::is_enum_v<std::remove_cvref_t<T>>
+struct std::formatter<T> {
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const std::remove_cvref_t<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
+        auto str = LLWFLOWS_NAMESPACE::detail::enumToString(t);
+        if(str.empty()) {
+            return std::format_to(ctx.out(), "{}", (int)t);
+        } else {
+            return std::format_to(ctx.out(), "{}", str);
+        }
+    }
+};
 #else
 #include <fmt/format.h>
 #define LLWFLOWS_FORMAT fmt::format
@@ -91,10 +106,14 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_enum_v<T> > > {
 LLWFLOWS_NS_BEGIN
 namespace debug {
 inline bool supportsColor() {
+#ifdef __linux__
     const char* term = std::getenv("TERM");
     return term &&
            (std::string(term) == "xterm" || std::string(term) == "xterm-256color" || std::string(term) == "screen" ||
             std::string(term) == "screen-256color" || std::string(term) == "linux");
+#else
+    return false;
+#endif
 }
 
 #define LINUX_ANSI_COLOR_TABLE                 \
@@ -121,9 +140,12 @@ inline bool supportsColor() {
         if (supportsColor) return code;           \
         return "";                                \
     }
+
 LINUX_ANSI_COLOR_TABLE
+
 #undef LINUX_ANSI_COLOR
 #undef LINUX_ANSI_COLOR_TABLE
+
 }  // namespace debug
 LLWFLOWS_NS_END
 

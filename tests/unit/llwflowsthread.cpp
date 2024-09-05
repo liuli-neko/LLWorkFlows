@@ -14,11 +14,17 @@ TEST(ThreadTest, Basic) {
                       threads[0].priority().second, threads[0].maxPriority());
     for (int i = 0; i < 10; ++i) {
         threads[i].setName((std::string("Thread-") + std::to_string(i)).c_str());
+#ifdef __linux__
         threads[i].setPriority(Thread::SchedRoundRobin, i + 1);
+#endif
         threads[i].start([id = i, &threads]() {
             char name[254];
             memset(name, 0, sizeof(name));
+#ifdef __linux__
             pthread_getname_np(pthread_self(), name, sizeof(name));
+#else
+            memcpy(name, (std::string("Thread-") + std::to_string(id)).c_str(), 8 + std::to_string(id).length() + 1);
+#endif
             EXPECT_STREQ((std::string("Thread-") + std::to_string(id)).c_str(), threads[id].name());
             EXPECT_STREQ((std::string("Thread-") + std::to_string(id)).c_str(), name);
             auto priority = threads[id].priority();

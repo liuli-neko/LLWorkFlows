@@ -114,7 +114,7 @@ auto ThreadPool::distributeTask(std::function<void()> task, const TaskDescriptio
         }
     }
     LLWFLOWS_DEBUG("add task[{}] to worker {} with priority {}, workerqueuesize {}, idle count {}", descptr->name,
-                   workerId, desc.priority, mWorkers[workerId].taskQueue().size(), mWorkers[workerId].idleLoopCount());
+                   workerId, (int)desc.priority, mWorkers[workerId].taskQueue().size(), mWorkers[workerId].idleLoopCount());
     return addTaskImp(std::move(taskWithRetry), *descptr, workerId);
 }
 
@@ -157,7 +157,7 @@ auto ThreadPool::packTask(std::function<void()> task, const TaskDescription& des
             }
             if (p->promise->state() == TaskState::Done) {
                 LLWFLOWS_DEBUG("task[{}/{}] fished in worker {}, retry {}, priority {}.", p->name, p->promise->taskId(),
-                               p->promise->workerId(), p->retryCount, p->priority);
+                               p->promise->workerId(), p->retryCount, (int)p->priority);
             }
             delete p;
         });

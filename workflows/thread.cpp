@@ -2,6 +2,10 @@
 
 #include <map>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "detail/log.hpp"
 
 LLWFLOWS_NS_BEGIN
@@ -12,8 +16,14 @@ static std::map<std::thread::id, Thread*> kThreads;
 auto Thread::setName(const char* name) -> void {
     mName = name;
     if (isRunning()) {
-        pthread_t thread_handle = mThreadMetaData->native_handle();
+        auto thread_handle = mThreadMetaData->native_handle();
+#ifdef __linux__
         pthread_setname_np(thread_handle, name);
+#else
+        std::unique_ptr<wchar_t[]> w_name = std::make_unique<wchar_t[]>(strlen(name) + 1);
+        mbstowcs(w_name.get(), name, strlen(name) + 1);
+        SetThreadDescription(thread_handle, w_name.get());
+#endif
     }
 }
 
@@ -45,6 +55,7 @@ auto Thread::setPriority(const int policy, const int priority) -> void {
 }
 
 auto Thread::priority() const -> std::pair<int, int> {
+#ifdef __linux__
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     int                policy;
@@ -57,9 +68,20 @@ auto Thread::priority() const -> std::pair<int, int> {
         pthread_getschedparam(pthread_self(), &policy, &param);
     }
     return {policy, param.sched_priority};
+#else
+    LLWFLOWS_LOG_WARN("setPriority not supported on this platform");
+    return {0, 0};
+#endif
 }
 
-auto Thread::maxPriority() const -> int { return sched_get_priority_max(mPolicy); }
+auto Thread::maxPriority() const -> int {
+#ifdef __linux__
+    return sched_get_priority_max(mPolicy);
+#else
+    LLWFLOWS_LOG_WARN("maxPriority not supported on this platform");
+    return 0;
+#endif
+}
 
 auto Thread::join() -> void {
     LLWFLOWS_ASSERT(mThreadMetaData && mThreadMetaData->joinable(), "Thread not running");
@@ -110,13 +132,14 @@ auto Thread::isJoinable() const -> bool {
 
 auto Thread::runImpl() -> void {
     mIsRunning = true;
-    pthread_setname_np(pthread_self(), mName.c_str());
+    setName(mName.c_str());
     setPriorityImpl(mPolicy, mPriority);
     run();
     mIsRunning = false;
 }
 
 auto Thread::setPriorityImpl(const int policy, const int priority) -> void {
+#ifdef __linux__
     pthread_attr_t attr;
     if (auto ret = pthread_attr_init(&attr); ret != 0) {
         LLWFLOWS_LOG_ERROR("Failed to initialize thread({}) attribute, error: {}", name(), strerror(ret));
@@ -138,6 +161,9 @@ auto Thread::setPriorityImpl(const int policy, const int priority) -> void {
             LLWFLOWS_LOG_ERROR("Failed to set thread({}) priority, error: {}", name(), strerror(ret));
         }
     }
+#else
+    LLWFLOWS_LOG_WARN("setPriority not supported on this platform");
+#endif
 }
 
 auto Thread::run() -> void {
