@@ -29,14 +29,14 @@
 #if defined(LLWFLOWS_STD_FORMAT)
 #define LLWFLOWS_FORMAT std::format
 template <typename T>
-requires std::is_enum_v<std::remove_cvref_t<T>>
+    requires std::is_enum_v<std::remove_cvref_t<T>>
 struct std::formatter<T> {
     constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
 
     template <typename FormatContext>
     constexpr auto format(const std::remove_cvref_t<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
         auto str = LLWFLOWS_NAMESPACE::detail::enumToString(t);
-        if(str.empty()) {
+        if (str.empty()) {
             return std::format_to(ctx.out(), "{}", (int)t);
         } else {
             return std::format_to(ctx.out(), "{}", str);
@@ -47,13 +47,13 @@ struct std::formatter<T> {
 #include <fmt/format.h>
 #define LLWFLOWS_FORMAT fmt::format
 template <typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_enum_v<T> > > {
+struct fmt::formatter<T, char, std::enable_if_t<std::is_enum_v<T>>> {
     constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
 
     template <typename FormatContext>
     constexpr auto format(T t, FormatContext& ctx) -> decltype(ctx.out()) {
         auto str = LLWFLOWS_NAMESPACE::detail::enumToString(t);
-        if(str.empty()) {
+        if (str.empty()) {
             return fmt::format_to(ctx.out(), "{}", (int)t);
         } else {
             return fmt::format_to(ctx.out(), "{}", str);
@@ -150,19 +150,23 @@ LINUX_ANSI_COLOR_TABLE
 LLWFLOWS_NS_END
 
 #ifdef LLWFLOWS_LOG_CONTEXT
-#define LLWFLOWS_LOG_OUTPUT_FUNC(level, color, fmt, ...)                                                            \
-    {                                                                                                               \
-        auto file_offset                    = std::string_view(__FILE__).find_last_of("/");                         \
-        auto now                            = std::chrono::system_clock::now();                                     \
-        auto now_c                          = std::chrono::system_clock::to_time_t(now);                            \
-        auto time_str                       = std::ctime(&now_c);                                                   \
-        time_str[std::strlen(time_str) - 1] = '\0';                                                                 \
-        fprintf(LLWFLOWS_LOG_OUTPUT, "%s: %s\n",                                                                    \
-                LLWFLOWS_FORMAT("{}{:<8}- [{}][{}:{}][{}]{}", color(), level, time_str,                             \
-                                file_offset == std::string::npos ? __FILE__ : __FILE__ + file_offset + 1, __LINE__, \
-                                __FUNCTION__, LLWFLOWS_NAMESPACE::debug::resetColor())                              \
-                    .c_str(),                                                                                       \
-                LLWFLOWS_FORMAT(fmt, ##__VA_ARGS__).c_str());                                                       \
+#define LLWFLOWS_LOG_OUTPUT_FUNC(level, color, fmt, ...)                                                          \
+    {                                                                                                             \
+        auto _llwflows_file_offset = std::string_view(__FILE__).find_last_of("/");                                \
+        auto _llwflows_now         = std::chrono::system_clock::now();                                            \
+        auto _llwflows_now_c       = std::chrono::system_clock::to_time_t(_llwflows_now);                         \
+        auto _llwflows_time_str    = std::ctime(&_llwflows_now_c);                                                \
+        if (_llwflows_file_offset == std::string::npos) {                                                         \
+            _llwflows_file_offset = std::string_view(__FILE__).find_last_of("\\");                                \
+        }                                                                                                         \
+        _llwflows_time_str[std::strlen(_llwflows_time_str) - 1] = '\0';                                           \
+        fprintf(LLWFLOWS_LOG_OUTPUT, "%s: %s\n",                                                                  \
+                LLWFLOWS_FORMAT(                                                                                  \
+                    "{}{:<8}- [{}][{}:{}][{}]{}", color(), level, _llwflows_time_str,                             \
+                    _llwflows_file_offset == std::string::npos ? __FILE__ : __FILE__ + _llwflows_file_offset + 1, \
+                    __LINE__, __FUNCTION__, LLWFLOWS_NAMESPACE::debug::resetColor())                              \
+                    .c_str(),                                                                                     \
+                LLWFLOWS_FORMAT(fmt, ##__VA_ARGS__).c_str());                                                     \
     }
 #else
 #define LLWFLOWS_LOG_OUTPUT_FUNC(level, color, ...)                                                          \

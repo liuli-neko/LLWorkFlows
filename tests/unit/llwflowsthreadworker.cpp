@@ -2,8 +2,8 @@
 
 #include <bitset>
 #include <chrono>
-#include <thread>
 #include <random>
+#include <thread>
 
 #include "../../workflows/detail/log.hpp"
 #include "../../workflows/threadworker.hpp"
@@ -15,11 +15,12 @@ TEST(ThreadWorkerTest, Basic) {
     SRingBuffer<int>             doneIds(num_test_threads * num_test_tasks + 1);
     ThreadWorker                 threads[num_test_threads];
     std::shared_ptr<TaskPromise> taskInfo[num_test_threads * num_test_tasks];
+    auto                         now = std::chrono::system_clock::now();
     for (int i = 0; i < num_test_threads; ++i) {
         threads[i].init(i);
         threads[i].start();
         for (int j = 0; j < num_test_tasks; ++j) {
-            taskInfo[i * num_test_tasks + j] = threads[i].post([i, j, &doneIds]() {
+            taskInfo[i * num_test_tasks + j] = threads[i].post([i, j, &doneIds, now]() {
                 std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 10));
                 doneIds.push(i * num_test_tasks + j);
             });

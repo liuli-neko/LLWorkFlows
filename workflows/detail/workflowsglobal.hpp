@@ -1,9 +1,9 @@
 #pragma once
 
-#define LLWFLOWS_NS_BEGIN  namespace llflows {
+#define LLWFLOWS_NS_BEGIN  namespace llwflows {
 #define LLWFLOWS_NS_END    }
-#define LLWFLOWS_NAMESPACE ::llflows
-#define LLWFLOWS_NS_USING  using namespace llflows;
+#define LLWFLOWS_NAMESPACE ::llwflows
+#define LLWFLOWS_NS_USING  using namespace llwflows;
 
 #if __cplusplus >= 202002L || _MSVC_LANG >= 202002L
 #define LLWFLOWS_CPP_PLUS 20
